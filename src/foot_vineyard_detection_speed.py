@@ -137,21 +137,16 @@ class ProcessPointcloud:
 		# pointcloud = self.hard_reduce_pointcloud(pointcloud,self.reduce_pointcloud_ratio)
 
 		t10 = time.time()
-		octree = OctreeTree(torch.matmul(pointcloud,self.transfo_link_3d),self.pointcloud_octree_kwargs)
 		t20 = time.time()
-		colored_vox  = octree.compute("get_colored_pc")
-		self.ros_topic_manager.pub_message("index_voxels",point_cloud_4d(torch.matmul(colored_vox,self.transfo_link_4d.T).cpu(), self.frame_id_link))
-		
 		t30 = time.time()
-		ground_segmentation = octree.compute("get_ground_segmentation")
-		self.ros_topic_manager.pub_message("ground_segmentation"   ,point_cloud_4d(torch.matmul(ground_segmentation,self.transfo_link_4d.T).cpu(), self.frame_id_link))
-		
 		t40 = time.time()
-		pointcloud_octree = octree.compute("get_entier_pc")
-		
 
-		ground_pointcloud = pointcloud_octree[ground_segmentation[:,3]==1]#[:,:2]
-		plants_pointcloud = pointcloud_octree[ground_segmentation[:,3]==0]#[:,:2]
+
+		ground_pointcloud = pointcloud
+		plants_pointcloud = pointcloud
+
+
+
 		plants_pointcloud = self.born_lidar_range(plants_pointcloud,self.range_lidar_min,self.range_lidar_max)
 		t50 = time.time()
 		if self.ground_approx_memory:
@@ -160,6 +155,9 @@ class ProcessPointcloud:
 		else:
 			ground_params = ground_approx_poly_n(ground_pointcloud,self.ground_approx_error,self.ground_approx_order)
 		
+
+
+
 		t60 = time.time()
 		visu_plan_approximed = grid_based_on_param_poly_n(ground_params,pointcloud.device,self.ground_approx_order)
 		self.ros_topic_manager.pub_message("visu_plan_approximed",point_cloud_3d(torch.matmul(visu_plan_approximed,self.transfo_link_3d.T).cpu(), self.frame_id_link))
@@ -195,25 +193,25 @@ class ProcessPointcloud:
 		final_foot_validate = final_foot_selected[foot_selection > self.threshold_nb_plant_foot_detection]
 		self.ros_topic_manager.pub_message("final_foot_validate",point_cloud_3d(torch.matmul(final_foot_validate,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 		t120 = time.time()
-		print("t10 to t00 : ",(t10-t0)*1000,"ms")
-		print("t20 to t10 : ",(t20-t10)*1000,"ms")
-		print("t30 to t20 : ",(t30-t20)*1000,"ms")
-		print("t40 to t30 : ",(t40-t30)*1000,"ms")
-		print("t50 to t40 : ",(t50-t40)*1000,"ms")
-		print("t60 to t50 : ",(t60-t50)*1000,"ms")
-		print("61 to t60 : ",(t60-t60)*1000,"ms")
-		print("t80 to t670 : ",(t80-t70)*1000,"ms")
-		print("t90 to t0   : ",(t90-t80)*1000,"ms")
-		print("t100 to t0 : ",(t100-t90)*1000,"ms")
-		print("t110 to t0 : ",(t110-t100)*1000,"ms")
-		print("t120 to t0 : ",(t120-t110)*1000,"ms")
+		# print("t10 to t00 : ",(t10-t0)*1000,"ms")
+		# print("t20 to t10 : ",(t20-t10)*1000,"ms")
+		# print("t30 to t20 : ",(t30-t20)*1000,"ms")
+		# print("t40 to t30 : ",(t40-t30)*1000,"ms")
+		# print("t50 to t40 : ",(t50-t40)*1000,"ms")
+		# print("t60 to t50 : ",(t60-t50)*1000,"ms")
+		# print("61 to t60 : ",(t60-t60)*1000,"ms")
+		# print("t80 to t670 : ",(t80-t70)*1000,"ms")
+		# print("t90 to t0   : ",(t90-t80)*1000,"ms")
+		# print("t100 to t0 : ",(t100-t90)*1000,"ms")
+		# print("t110 to t0 : ",(t110-t100)*1000,"ms")
+		# print("t120 to t0 : ",(t120-t110)*1000,"ms")
 
 		# 	# print("t140 to t0 : ",(t140-t130)*1000,"ms")
 		# 	# print("t150 to t0 : ",(t150-t140)*1000,"ms")
 		# 	# print("t160 to t0 : ",(t160-t150)*1000,"ms")
 		# 	# print("t170 to t0 : ",(t170-t160)*1000,"ms")
 
-		print("total process : ",(t120-t0)*1000,"ms")
+		# print("total process : ",(t120-t0)*1000,"ms")
 
 
 	def map_callback(self,msg: PointCloud2):

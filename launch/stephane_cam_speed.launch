@@ -31,16 +31,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-  <node pkg="big_pc_compute" type="foot_vineyard_detection.py" name="compute_lidar"
+  <node pkg="big_pc_compute" type="foot_vineyard_detection_speed.py" name="compute_lidar"
     required="true" output="screen">
 
     <!-- <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/> -->
@@ -85,7 +76,7 @@
       ground_approx_memory: true              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
       final_merging_distance: 0.1
 
-      height_selection_low: 0.0
+      height_selection_low: 0.2
       height_selection_mid: 0.4
       height_selection_hig: 1.2
 
