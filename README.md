@@ -14,7 +14,7 @@ Detect the vineyards foot, based on LiDAR or depth-camera, processed in real tim
 
 or
 
-`python3.8 -m pip install torch torchvision torchaudio`
+`pip install numpy==1.20 torch==2.0.0 rosnumpy`
 
 ## Source your env :
 
