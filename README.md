@@ -6,8 +6,20 @@ Detect the vineyards foot, based on LiDAR or depth-camera, processed in real tim
 
 ## Install :
 
+`conda env create -f environment.yml`
+
+or
+
 `python3.8 -m pip install torch torchvision torchaudio`
 
+## Source your env :
+
+Ros-noetic :
+`source /opt/ros/noetic/setup.bash`
+
+Python environement :
+
+`conda activate py_ros`
 
 ## Run :
 
