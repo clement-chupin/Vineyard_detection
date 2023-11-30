@@ -1,7 +1,9 @@
 # Vineyard_detection
 Detect the vineyards foot, based on LiDAR or depth-camera, processed in real time, based on pytorch
 
+## Demo :
 
+![](https://github.com/clement-chupin/Vineyard_detection/blob/master/images/demo_2.gif)
 
 
 ## Install :
@@ -11,7 +13,7 @@ Detect the vineyards foot, based on LiDAR or depth-camera, processed in real tim
 
 ## Run :
 
-`roslaunch Ros_Pointcloud_Real_Time_Analysis stephane_cam_z.launch`
+`roslaunch Vineyard_detection stephane_cam_z.launch`
 or
 `roslaunch NEW_ROS_PACKET_NAME stephane_cam_z.launch`
 
