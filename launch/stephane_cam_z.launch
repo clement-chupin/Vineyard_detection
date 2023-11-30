@@ -1,0 +1,77 @@
+<launch>
+
+<!-- <arg name="bag" default="/mnt/partition_deux/bag_files/bag_stephane.bag"/> -->
+  <arg name="bag" default=" /mnt/partition_deux/bag_files/bag_camera_zed_2023_10_13_15_h_00/bag_stehpane_ros1.bag"/>
+ 
+    <node name="static_tf_lidar1" pkg="tf2_ros" type="static_transform_publisher"
+    args="0.0 0.0 0.0  0.0 0.0 0.0 base_link zed2i_left_camera_frame"/>
+
+
+   <!-- <node name="static_tf_lidar2" pkg="tf2_ros" type="static_transform_publisher"
+    args="2.0 0.0 1.0  0 0 0  base_link base_link"/> -->
+  <!-- <node name="static_tf_lidar1" pkg="tf2_ros" type="static_transform_publisher"
+    args="0.1 0.0 1.81  0.0 0.5 0.0 base_link zed2i_left_camera_optical_frame"/> -->
+
+  <node pkg="big_pc_compute" type="foot_vineyard_detection.py" name="compute_lidar"
+    required="true" output="screen">
+
+    <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/>
+
+    <rosparam subst_value="True">
+      activate: true
+      use_gpu:  true
+      debug:    false
+
+      link: "zed2i_left_camera_frame"
+      <!-- link: "zed2i_left_camera_optical_frame" -->
+      
+
+      transfo_link: [[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0],]
+
+      reduce_pointcloud_ratio: 0.05
+
+
+      lidar_range_min: 0.0
+      lidar_range_max: 4.0
+      lidar_z_min: 2.0
+      lidar_ground_approx_padding: 0.5
+
+      octo_npoints_max: 2000
+      octo_depth_max: 100
+      octo_padding_size: 0.2
+
+      ground_segmentation_a: -0.6
+      ground_segmentation_b: 0.05
+
+      density_max_a: -100
+      density_max_b: 0.0
+      density_kernel_size: 0.1
+
+      height_selection_low: 0.0
+      height_selection_mid: 0.4
+      height_selection_hig: 1.2
+
+
+      vine_foot_to_plane_trhld: 0.2
+      final_vine_selection_a: -0.5
+      final_vine_selection_b: 0.0
+
+
+      ground_approx_order: 3                  #order of the ground, 3 give the better result
+      ground_approx_error: 0.2                
+      ground_approx_memory: true              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
+      final_merging_distance: 0.1
+
+      foot_selection_pcc_kernel: 0.1
+      foot_selection_heigth_threshold: 0.1
+
+
+
+    </rosparam>
+  </node> 
+
+
+  <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l -r 1 $(arg bag)" output="log"/>
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/camz_v2.rviz" />
+
+</launch>

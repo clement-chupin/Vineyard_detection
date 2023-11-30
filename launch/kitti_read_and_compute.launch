@@ -1,0 +1,68 @@
+<launch>
+  <arg name="compute_mode" default="density"/>
+  <!-- URBAN DRIVE -->
+  <!-- <arg name="bag" default="/mnt/partition_deux/bag_files/kitti_2011_09_26_drive_0001_synced.bag"/> -->
+  <arg name="bag" default="/mnt/partition_deux/bag_files/kitti_2011_09_26_drive_0001_synced.bag"/>
+  <!-- <arg name="bag" default="/media/chupin/partition_deux/bag_stephane.bag"/> -->
+  
+
+   <!-- <node name="static_tf_lidar2" pkg="tf2_ros" type="static_transform_publisher"
+    args="2.0 0.0 1.0  0 0 0  base_link base_link"/> -->
+
+  <!-- <arg name="bag" default="/media/chupin/partition_deux/kitti_dataset/kitti_2011_09_29_drive_0071_synced.bag"/> -->
+  <!-- <arg name="bag" default="/media/chupin/partition_deux/kitti_dataset/rough_terrain_1.bag"/> -->
+  <!-- PEOPLE DRIVE -->
+  <!-- <arg name="bag" default="/media/chupin/partition_deux/kitti_dataset/kitti_2011_09_28_drive_0138_synced.bag"/> -->
+  <!-- <node pkg="convert_travel_dataset" type="convert.py" name="convert"/> -->
+
+
+
+
+  <node pkg="big_pc_compute" type="pointcloud_process_v0.py" name="lidar_cloud"
+    required="true" output="screen">
+    <remap from="~pointcloud" to="/kitti/velo/pointcloud"/>
+    <!-- <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/> -->
+    <rosparam subst_value="True">
+      activate: true
+      use_gpu:  true
+      debug:    false
+
+      computation_target: $(arg compute_mode)        #["density,"gr","pt_interest","experimental_gaussian"]
+      link: "velo_link"
+
+
+
+      density_pcc: 0.2
+      density_pi_pcc: 0.5
+
+      angle_voxel_split: 20
+      dist_voxel_split:  4.0
+
+      angle_voxel_split_padding: 1
+      dist_voxel_split_padding:  0.2
+
+
+
+      pool_n_workers:  64
+      pool_n_chunk:    64
+
+      lidar_range_min: 0.0
+      lidar_range_max: 40.0
+      lidar_z_min:     -2.5
+
+      gr_relative_treshold: 0.0
+      gr_absolute_treshold: 0.15
+      gr_angular:           0.5
+
+
+    </rosparam>
+  </node>
+
+
+
+  
+
+  <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l $(arg bag)" output="log"/>
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/kitti_v1.rviz" />
+
+</launch>
