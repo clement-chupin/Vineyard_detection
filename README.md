@@ -4,6 +4,8 @@ Detect the vineyards foot, based on LiDAR or depth-camera, processed in real tim
 ## Demo :
 
 ![](https://github.com/clement-chupin/Vineyard_detection/blob/master/images/demo_2.gif)
+![](https://github.com/clement-chupin/Vineyard_detection/blob/master/images/foot_detection_shema.png)
+
 
 
 ## Install :
