@@ -37,9 +37,10 @@ class ProcessPointcloud:
 
 		self.activate                 = rospy.get_param('~activate', True)
 		self.use_gpu                  = rospy.get_param('~use_gpu', True)
-		self.debug               = rospy.get_param('~debug', True)
+		self.debug                    = rospy.get_param('~debug', True)
 
-		self.frame_id_link              		  = rospy.get_param('~link',"velo_link")
+		self.frame_id_link            = rospy.get_param('~link',"velo_link")
+		self.transfo_link = rospy.get_param('~transfo_link', [[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
 		
 		self.range_lidar_min          = rospy.get_param('~lidar_range_min', 0.0)
 		self.range_lidar_max          = rospy.get_param('~lidar_range_max', 100.0)
@@ -53,7 +54,6 @@ class ProcessPointcloud:
 
 		self.reduce_pointcloud_ratio  = rospy.get_param('~reduce_pointcloud_ratio', 0.5)
 
-		self.transfo_link = rospy.get_param('~transfo_link', [[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
 		
 		self.ground_segmentation_a    = rospy.get_param('~ground_segmentation_a', -0.6)
 		self.ground_segmentation_b    = rospy.get_param('~ground_segmentation_b', 0.05)
