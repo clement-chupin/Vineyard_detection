@@ -51,9 +51,9 @@
       reduce_pointcloud_ratio: 1.0
 
       lidar_range_min: 0.0
-      lidar_range_max: 4.0
+      lidar_range_max: 8.0
       lidar_z_min: 2.0
-      lidar_z_max: 10.0
+      lidar_z_max: 100.0
       lidar_ground_approx_padding: 0.5
 
       octo_npoints_max: 1000
@@ -72,11 +72,11 @@
       final_vine_selection_b: 0.0
 
       ground_approx_order: 3                  #order of the ground, 3 give the better result
-      ground_approx_error: 0.2                
-      ground_approx_memory: true              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
+      ground_approx_error: 0.05                
+      ground_approx_memory: false              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
       final_merging_distance: 0.1
 
-      height_selection_low: 0.2
+      height_selection_low: 0.3
       height_selection_mid: 0.4
       height_selection_hig: 1.2
 
