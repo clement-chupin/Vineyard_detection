@@ -51,21 +51,23 @@
       reduce_pointcloud_ratio: 1.0
 
       lidar_range_min: 0.0
-      lidar_range_max: 8.0
+      lidar_range_max: 6.0
       lidar_z_min: 2.0
       lidar_z_max: 100.0
-      lidar_ground_approx_padding: 0.5
+      #lidar_ground_approx_padding: 0.5
 
       octo_npoints_max: 1000
       octo_depth_max: 100
       octo_padding_size: 0.2
 
-      ground_segmentation_a: -0.6
-      ground_segmentation_b: 0.05
+      ground_segmentation_a: -0.6 #unused
+      ground_segmentation_b: 0.05 #unused
+      ground_segmentation_voxel_size: 0.1
 
       density_max_a: -100
       density_max_b: 0.0
       density_kernel_size: 0.1
+      plant_density_kernel_size: 0.3
 
       vine_foot_to_plane_trhld: 0.2
       final_vine_selection_a: -0.5

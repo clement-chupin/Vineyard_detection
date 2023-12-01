@@ -27,7 +27,7 @@ def plan_approx_poly_n(pointcloud,order=2):
 
 def grid_based_on_param_poly_n(abc,device,order=2):
 	nb_x,nb_y = 40,40
-	start_x,start_y,end_x,end_y = -6.0,-6.0,6.0,6.0
+	start_x,start_y,end_x,end_y = -3.0,-6.0,10.0,6.0
 	range_x,range_y = end_x-start_x,end_y-start_y
 	x,y = torch.arange(start_x,end_x,range_x/nb_x,device=device),torch.arange(start_y,end_y,range_y/nb_y,device=device)
 	xs,ys = torch.meshgrid(x,y)
@@ -92,6 +92,7 @@ def grille_XYZ(Nx,Ny,Nz,device):
 		zs.view(Nx,Ny,Nz)
 		],3)#.view(Nx*Ny*Nz,3)
 	return XYZ
+
 def grille_XY(Nx,Ny,device):
 	x,y, = torch.arange(0,Nx,1,device=device),torch.arange(0,Ny,1,device=device)
 	xs,ys = torch.meshgrid(x,y)
@@ -104,9 +105,9 @@ def grille_XY(Nx,Ny,device):
 def lowest_voxels_per_column_parallel(voxel_grid):
 	Nx,Ny,Nz = voxel_grid.shape
 	grille = torch.arange(0,voxel_grid.shape[2],1,device=voxel_grid.device).view(1,1,-1).repeat(voxel_grid.shape[0],voxel_grid.shape[1],1)
-	transposed_grid = (grille*1.0*voxel_grid) + (1-voxel_grid*1)*20.0
+	transposed_grid = (grille*1.0*voxel_grid) + (1-voxel_grid*1)*1e7
 	low_lined = transposed_grid.min(-1).values.view(Nx*Ny)
-	return torch.hstack([grille_XY(Nx,Ny,voxel_grid.device),low_lined.view(-1,1)])[low_lined!=20.0]
+	return torch.hstack([grille_XY(Nx,Ny,voxel_grid.device),low_lined.view(-1,1)])[low_lined!=1e7]
 	
 
 def keep_min_in_voxel_grid(pointcloud,voxel_size):
@@ -115,31 +116,14 @@ def keep_min_in_voxel_grid(pointcloud,voxel_size):
 	low = lowest_voxels_per_column_parallel(voxel_grid)
 	return low*voxel_size + min_coords.view(1,3)
 
-
-# def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,init_abc=None): #speed_speed
-# 	if init_abc is None:
-# 		abc_outliers = plan_approx_poly_n(pointcloud,order)
-# 	else:
-# 		abc_outliers = init_abc
-# 	error 	     = error_of_approx_poly_n(pointcloud,abc_outliers,order)
-# 	abc_inliers  = plan_approx_poly_n(pointcloud[error < ground_approx_error],order)
-# 	return abc_inliers,abc_outliers
-
-
-def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,init_abc=None): #speed_speed
-	
-
+def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,init_abc=None,voxel_size=0.1): #speed_speed
 	if init_abc is None:
-		abc_outliers = plan_approx_poly_n(keep_min_in_voxel_grid(pointcloud,0.1),1)
+		abc_outliers = plan_approx_poly_n(keep_min_in_voxel_grid(pointcloud,voxel_size),1)
 	else:
 		abc_outliers = init_abc
-
 	error 	     = torch.abs(error_of_approx_poly_n(pointcloud,abc_outliers,1))
-
 	abc_inliers  = plan_approx_poly_n(pointcloud[error < ground_approx_error],order)
-
-	return abc_inliers,abc_inliers
-
+	return abc_inliers
 
 
 def keep_pointcloud_in_plan_interval_poly_n(pointcloud,params,interval,order=2):
@@ -164,16 +148,14 @@ def merge_by_distance(pointcloud,final_merging_distance=0.2):
 	# print(sigma_points)
 	return sigma_points
 
-
-
-def count_neighbhoroud(poi,pointcloud,r=0.1):
+def count_neighbourhood(poi,pointcloud,r=0.1):
 
 	distance = torch.cdist(poi[:,:2],pointcloud[:,:2])
 	nb_neighboorood = ((distance <r)*1.0).sum(-1)  
 	return nb_neighboorood
 
 
-
+### unused functions :
 def foot_selection(self,foot,poi,r=0.1,height_threshold=0.3,marker_link="base_link"):#P,N
 	F = foot.shape[0]
 	N = poi.shape[0]

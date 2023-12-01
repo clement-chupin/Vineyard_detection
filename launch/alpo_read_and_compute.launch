@@ -42,7 +42,7 @@ because they are not part of the same tree.Tf has two or more unconnected trees.
 
 
 
-  <node pkg="big_pc_compute" type="pointcloud_process_v1.py" name="compute_lidar"
+  <node pkg="big_pc_compute" type="pointcloud_process_v0.py" name="compute_lidar"
     required="true" output="screen">
 
     <remap from="~pointcloud" to="/lidar_cloud/map"/>

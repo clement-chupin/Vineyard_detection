@@ -53,9 +53,9 @@ class ProcessPointcloud:
 
 		self.reduce_pointcloud_ratio  = rospy.get_param('~reduce_pointcloud_ratio', 0.5)
 
-		self.voxel_ground_size        = rospy.get_param('~ground_segmentation_voxel_size', 0.1)
-		self.ground_segmentation_a    = rospy.get_param('~ground_segmentation_a', -0.6) #unused
-		self.ground_segmentation_b    = rospy.get_param('~ground_segmentation_b', 0.05) #unused
+		
+		self.ground_segmentation_a    = rospy.get_param('~ground_segmentation_a', -0.6)
+		self.ground_segmentation_b    = rospy.get_param('~ground_segmentation_b', 0.05)
 		
 		self.density_max_a            = rospy.get_param('~density_max_a', -100)
 		self.density_max_b            = rospy.get_param('~density_max_b', 0.0)
@@ -91,13 +91,14 @@ class ProcessPointcloud:
 		self.plants_octree_kwargs = self.pointcloud_octree_kwargs
 		self.plants_poi_octree_kwargs = self.pointcloud_octree_kwargs
 		#if you want to modify specific process inside the octree
-		self.plants_poi_octree_kwargs["density_kernel_size"] = rospy.get_param('~plant_density_kernel_size', 0.3)
+		self.plants_poi_octree_kwargs["density_kernel_size"] = 0.3
 
 		self.pred_ground_params = None
 		self.ros_topic_manager = ros_topic_manager()
 	
 		self.final_point_selection = LocalMaxSearching(self.final_vine_selection_a,self.final_vine_selection_b)
-
+		# self.dense_compute = Dens_compute()
+		
 		if self.activate:
 			torch.set_grad_enabled(False)
 			if torch.cuda.is_available() and self.use_gpu:  
@@ -111,6 +112,7 @@ class ProcessPointcloud:
 				[
 					self.transfo_link_3d,
 					torch.tensor([[0,0,0]],device=self.device)]),torch.tensor([0,0,0,1.0],device=self.device).view(-1,1)])
+
 			self.pointcloud_sub = rospy.Subscriber('~pointcloud', PointCloud2, self.map_callback,queue_size=1)
 			
 	def born_lidar_range(self,pointcloud,born_min,born_max):
@@ -121,28 +123,37 @@ class ProcessPointcloud:
 		return pointcloud[(pointcloud[:,2] > self.z_lidar_min_limit)*(pointcloud[:,2] < self.z_lidar_max_limit)]
 	
 	def compute_pointcloud(self,pointcloud):
-		pointcloud = self.born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max)
-		self.ros_topic_manager.pub_message("pointcloud_keeped",point_cloud_3d(
-			torch.matmul(pointcloud,self.transfo_link_3d.T).cpu(), self.frame_id_link))
+		t0 = time.time()
 
+		pointcloud = self.born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max)
+		self.ros_topic_manager.pub_message("pointcloud_keeped",point_cloud_3d(torch.matmul(pointcloud,self.transfo_link_3d.T).cpu(), self.frame_id_link))
+		# pointcloud = self.hard_reduce_pointcloud(pointcloud,self.reduce_pointcloud_ratio)
+		t10 = time.time()
+		t20 = time.time()
+		t30 = time.time()
+		t40 = time.time()
+		t50 = time.time()
 		if self.ground_approx_memory:
-			ground_params = ground_approx_poly_n(
-				pointcloud,self.ground_approx_error,self.ground_approx_order,self.pred_ground_params,self.voxel_ground_size)
+			ground_params = ground_approx_poly_n(pointcloud,self.ground_approx_error,self.ground_approx_order,self.pred_ground_params)
 			self.pred_ground_params = ground_params
 		else:
-			ground_params = ground_approx_poly_n(
-				pointcloud,self.ground_approx_error,self.ground_approx_order,None,self.voxel_ground_size)
+			ground_params = ground_approx_poly_n(pointcloud,self.ground_approx_error,self.ground_approx_order)
 		
 		visu_plan_approximed = grid_based_on_param_poly_n(ground_params,pointcloud.device,self.ground_approx_order)
-		self.ros_topic_manager.pub_message("visu_plan_approximed",point_cloud_3d(
-			torch.matmul(visu_plan_approximed,self.transfo_link_3d.T).cpu(), self.frame_id_link))
+		self.ros_topic_manager.pub_message("visu_plan_approximed",point_cloud_3d(torch.matmul(visu_plan_approximed,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
-		ground  = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,
-													[-1e10,self.height_selection_low],self.ground_approx_order)
-		plant_in_foot_area  = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,
-																[self.height_selection_low,self.height_selection_mid],self.ground_approx_order)
-		plant_in_plant_area = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,
-																[self.height_selection_mid,self.height_selection_hig],self.ground_approx_order)
+
+
+		t60 = time.time()
+
+		
+		
+		# error_plan_proj = error_of_apborn_lidar_rangeprox_poly_n(plants_pointcloud,ground_params,self.ground_approx_order)
+		# projected_plants = torch.hstack([plants_pointcloud,error_plan_proj.view(-1,1)])
+	
+		ground  = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,[-1e10,self.height_selection_low],self.ground_approx_order)
+		plant_in_foot_area  = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,[self.height_selection_low,self.height_selection_mid],self.ground_approx_order)
+		plant_in_plant_area = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,[self.height_selection_mid,self.height_selection_hig],self.ground_approx_order)
 		
 		self.ros_topic_manager.pub_message("ground",point_cloud_3d(
 			torch.matmul(ground,self.transfo_link_3d.T).cpu(), self.frame_id_link))
@@ -151,44 +162,73 @@ class ProcessPointcloud:
 		self.ros_topic_manager.pub_message("plant_in_plant_area",point_cloud_3d(
 			torch.matmul(plant_in_plant_area,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 		
+		
+		
+		t70 = time.time()
 		if len(plant_in_foot_area) !=0:
 			foot_area_octree = OctreeTree(plant_in_foot_area,self.pointcloud_octree_kwargs)
-			
+			plant_area_octree = OctreeTree(plant_in_plant_area,self.pointcloud_octree_kwargs)
+			t80 = time.time()
 			foot_area     = foot_area_octree.compute("get_entier_pc")
 			unused_density_foot = foot_area_octree.compute("get_density")
 			local_max_foot_area = foot_area_octree.compute("get_local_max")
 			foot_area_poi  = foot_area[local_max_foot_area[:,3]==1]
+			t90 = time.time()
 
-			final_foot_selected = merge_by_distance(foot_area_poi,self.final_merging_distance)
+			final_foot_selected = merge_by_distance(foot_area_poi,0.15)
+
 			final_foot_selected = proj_pc_on_plan_poly_n(final_foot_selected,ground_params,self.ground_approx_order)
-			self.ros_topic_manager.pub_message("final_foot_selected",point_cloud_3d(torch.matmul(
-				final_foot_selected,self.transfo_link_3d.T).cpu(), self.frame_id_link))
-			
-			if len(plant_in_plant_area) !=0:
-				plant_area_octree = OctreeTree(plant_in_plant_area,self.pointcloud_octree_kwargs)
-				plant_selected_pointcloud     = plant_area_octree.compute("get_entier_pc")
-				unused_density_plant_selected = plant_area_octree.compute("get_density")
-				local_max_plant_selected      = plant_area_octree.compute("get_local_max")
-				plant_selected_poi = plant_selected_pointcloud[local_max_plant_selected[:,3]==1]
-				foot_selection = count_neighbourhood(final_foot_selected,plant_selected_poi)
+			self.ros_topic_manager.pub_message("final_foot_selected",point_cloud_3d(torch.matmul(final_foot_selected,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
-				final_foot_validate = final_foot_selected[foot_selection > self.threshold_nb_plant_foot_detection]
-			
-				self.ros_topic_manager.pub_message("final_foot_validate",point_cloud_3d(
-					torch.matmul(final_foot_validate,self.transfo_link_3d.T).cpu(), self.frame_id_link))
+			plant_selected_pointcloud     = plant_area_octree.compute("get_entier_pc")
+			unused_density_plant_selected = plant_area_octree.compute("get_density")
+			local_max_plant_selected      = plant_area_octree.compute("get_local_max")
+			plant_selected_poi = plant_selected_pointcloud[local_max_plant_selected[:,3]==1]
+			t100 = time.time()
+			foot_selection = count_neighbourhood(final_foot_selected,plant_selected_poi)
+			t110 = time.time()
+
+			final_foot_validate = final_foot_selected[foot_selection > self.threshold_nb_plant_foot_detection]
+		
+			self.ros_topic_manager.pub_message("final_foot_validate",point_cloud_3d(torch.matmul(final_foot_validate,self.transfo_link_3d.T).cpu(), self.frame_id_link))
+			t120 = time.time()
+
+			# print("t10 to t00 : ",(t10-t0)*1000,"ms")
+			# print("t20 to t10 : ",(t20-t10)*1000,"ms")
+			# print("t30 to t20 : ",(t30-t20)*1000,"ms")
+			# print("t40 to t30 : ",(t40-t30)*1000,"ms")
+			# print("t50 to t40 : ",(t50-t40)*1000,"ms")
+			# print("t60 to t50 : ",(t60-t50)*1000,"ms")
+			# print("t70 to t60 : ",(t70-t60)*1000,"ms")
+			# print("t80 to t70 : ",(t80-t70)*1000,"ms")
+			# print("t90 to t0   : ",(t90-t80)*1000,"ms")
+			# print("t100 to t0 : ",(t100-t90)*1000,"ms")
+			# print("t110 to t0 : ",(t110-t100)*1000,"ms")
+			# print("t120 to t0 : ",(t120-t110)*1000,"ms")
+
+				# print("t140 to t0 : ",(t140-t130)*1000,"ms")
+				# print("t150 to t0 : ",(t150-t140)*1000,"ms")
+				# print("t160 to t0 : ",(t160-t150)*1000,"ms")
+				# print("t170 to t0 : ",(t170-t160)*1000,"ms")
+
+			# print("total process : ",(t120-t0)*1000,"ms")
 
 	def map_callback(self,msg: PointCloud2):
 		t0 = time.time()
 		pointcloud = ros_numpy.point_cloud2.pointcloud2_to_xyz_array(msg)
+		# print("pointcloud shape received : ",pointcloud.shape)
+
 		if len(pointcloud):
 			pointcloud = torch.tensor(pointcloud,dtype=torch.float32,device=self.device)
 			self.ros_topic_manager.pub_message("pointcloud_received"   ,point_cloud_3d(pointcloud.cpu(), "base_link"))
 			self.compute_pointcloud(pointcloud)
 			t1 = time.time()
+
+			print(pointcloud.shape[0],"points")
+			print(round(1/(t1-t0)),"Hz")
+			print(round((t1-t0)*1000),"ms")
 			if self.debug:
-				print(pointcloud.shape[0],"points")
-				print(round(1/(t1-t0)),"Hz")
-				print(round((t1-t0)*1000),"ms")
+				print("Total computed in : ",(t1-t0)*1000,"ms")
 
 if __name__ == '__main__':
 	rospy.init_node('process_pointcloud')
