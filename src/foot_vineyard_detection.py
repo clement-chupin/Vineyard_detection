@@ -122,7 +122,7 @@ class ProcessPointcloud:
 	
 	def compute_pointcloud(self,pointcloud):
 		pointcloud = self.born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max)
-		self.ros_topic_manager.pub_message("pointcloud_keeped",point_cloud_3d(
+		self.ros_topic_manager.pub_message("pointcloud_range_limited",point_cloud_3d(
 			torch.matmul(pointcloud,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
 		if self.ground_approx_memory:
@@ -134,7 +134,7 @@ class ProcessPointcloud:
 				pointcloud,self.ground_approx_error,self.ground_approx_order,None,self.voxel_ground_size)
 		
 		visu_plan_approximed = grid_based_on_param_poly_n(ground_params,pointcloud.device,self.ground_approx_order)
-		self.ros_topic_manager.pub_message("visu_plan_approximed",point_cloud_3d(
+		self.ros_topic_manager.pub_message("ground_plan_approximed",point_cloud_3d(
 			torch.matmul(visu_plan_approximed,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
 		ground  = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,
@@ -144,11 +144,11 @@ class ProcessPointcloud:
 		plant_in_plant_area = keep_pointcloud_in_plan_interval_poly_n(pointcloud,ground_params,
 																[self.height_selection_mid,self.height_selection_hig],self.ground_approx_order)
 		
-		self.ros_topic_manager.pub_message("ground",point_cloud_3d(
+		self.ros_topic_manager.pub_message("ground_pointcloud",point_cloud_3d(
 			torch.matmul(ground,self.transfo_link_3d.T).cpu(), self.frame_id_link))
-		self.ros_topic_manager.pub_message("plant_in_foot_area",point_cloud_3d(
+		self.ros_topic_manager.pub_message("foot_pointcloud",point_cloud_3d(
 			torch.matmul(plant_in_foot_area,self.transfo_link_3d.T).cpu(), self.frame_id_link))
-		self.ros_topic_manager.pub_message("plant_in_plant_area",point_cloud_3d(
+		self.ros_topic_manager.pub_message("plant_pointcloud",point_cloud_3d(
 			torch.matmul(plant_in_plant_area,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 		
 		if len(plant_in_foot_area) !=0:
@@ -161,7 +161,7 @@ class ProcessPointcloud:
 
 			final_foot_selected = merge_by_distance(foot_area_poi,self.final_merging_distance)
 			final_foot_selected = proj_pc_on_plan_poly_n(final_foot_selected,ground_params,self.ground_approx_order)
-			self.ros_topic_manager.pub_message("final_foot_selected",point_cloud_3d(torch.matmul(
+			self.ros_topic_manager.pub_message("foot_detected",point_cloud_3d(torch.matmul(
 				final_foot_selected,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 			
 			if len(plant_in_plant_area) !=0:
@@ -174,7 +174,7 @@ class ProcessPointcloud:
 
 				final_foot_validate = final_foot_selected[foot_selection > self.threshold_nb_plant_foot_detection]
 			
-				self.ros_topic_manager.pub_message("final_foot_validate",point_cloud_3d(
+				self.ros_topic_manager.pub_message("foot_validate",point_cloud_3d(
 					torch.matmul(final_foot_validate,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
 	def map_callback(self,msg: PointCloud2):
@@ -182,7 +182,7 @@ class ProcessPointcloud:
 		pointcloud = ros_numpy.point_cloud2.pointcloud2_to_xyz_array(msg)
 		if len(pointcloud):
 			pointcloud = torch.tensor(pointcloud,dtype=torch.float32,device=self.device)
-			self.ros_topic_manager.pub_message("pointcloud_received"   ,point_cloud_3d(pointcloud.cpu(), "base_link"))
+			self.ros_topic_manager.pub_message("raw_pointcloud_received",point_cloud_3d(pointcloud.cpu(), "base_link"))
 			self.compute_pointcloud(pointcloud)
 			t1 = time.time()
 			if self.debug:

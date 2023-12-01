@@ -13,14 +13,12 @@
     args="0.1 0.0 1.81  0.0 0.5 0.0 base_link zed2i_left_camera_optical_frame"/> -->
 
 
-
-
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
 
     <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
     <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
       <remap from="~input" to="/zed2i/zed_node/point_cloud/cloud_registered" />
-      <remap from="~output" to="downsampled" />
+      <remap from="~output" to="pointcloud_downsampled" />
       <rosparam>
         filter_field_name: z
         filter_limit_min: -100
@@ -35,7 +33,7 @@
     required="true" output="screen">
 
     <!-- <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/> -->
-    <remap from="~pointcloud" to="downsampled"/>
+    <remap from="~pointcloud" to="pointcloud_downsampled"/>
 
     <rosparam subst_value="True">
       activate: true
@@ -51,7 +49,7 @@
       reduce_pointcloud_ratio: 1.0
 
       lidar_range_min: 0.0
-      lidar_range_max: 6.0
+      lidar_range_max: 5.0
       lidar_z_min: 2.0
       lidar_z_max: 100.0
       #lidar_ground_approx_padding: 0.5
@@ -84,7 +82,6 @@
 
     </rosparam>
   </node> 
-
 
   <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l -r 1 $(arg bag)" output="log"/>
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/camz_v2.rviz" />
