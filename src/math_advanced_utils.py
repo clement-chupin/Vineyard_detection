@@ -215,14 +215,8 @@ def foot_selection(self,foot,poi,r=0.1,height_threshold=0.3,marker_link="base_li
 
 	print(cluster_foot.view(F,N)*1)
 	plot_cluster(cluster_foot.view(F,N)[:N_reduce,:N_reduce],foot_trans,poi_trans)
-		
-	#publish_lines()
 
 	return foot_selected
-
-
-
-
 
 
 
