@@ -3,7 +3,7 @@
   <!-- URBAN DRIVE -->
   <!-- <arg name="bag" default="/media/chupin/partition_deux/kitti_dataset/kitti_2011_09_26_drive_0001_synced.bag"/> -->
   <!-- <arg name="bag" default="/mnt/partition_deux/bag_files/demo_viti.bag"/> -->
-  
+  <!-- <arg name="bag" default="/mnt/partition_deux/demo_viti.bag"/> -->
 
 
  <node name="static_tf_lidar1" pkg="tf2_ros" type="static_transform_publisher"

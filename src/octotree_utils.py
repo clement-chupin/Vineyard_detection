@@ -1,28 +1,7 @@
 import torch
 import torch.nn as nn
-
-class Dens_compute(nn.Module):
-	def __init__(self, dist):
-		super().__init__()
-		self.d = dist
-	def forward(self,pointcloud,pointcloud_padded):
-		return (torch.cdist(pointcloud_padded,pointcloud,)<=self.d).sum(0).view(-1,1)[:pointcloud.shape[0]]
-
-class LocalMaxSearching(nn.Module):
-	def __init__(self, angle,threshold):
-		super().__init__()
-		self.a = angle
-		self.b = threshold
-
-	def forward(self,pointcloud,pointcloud_padding,element,element_padding):
-
-		P_i,P_j = pointcloud,pointcloud_padding
-		distance_ij = torch.cdist(P_i,P_j) 
-		P_j_projection = distance_ij*self.a+element_padding.view(-1)
-		P_j_projection_max  = P_j_projection.max(-1).values
-		dist_i_to_max = P_j_projection_max-element.view(-1)
-		return (dist_i_to_max <= self.b).view(-1,1)
-
+from math_advanced_utils import Dens_compute
+from math_advanced_utils import LocalMaxSearching
 class OctreeTree:
 	def __init__(self,
 			  pointcloud,
@@ -143,12 +122,8 @@ class OctreeNode:
 	
 	def get_local_max(self,):
 		self.pointcloud_max_density = self.max_dens_compute(self.pointcloud,self.pointcloud,self.pointcloud_density,self.pointcloud_density,)
-		# self.pointcloud_max_density = self.max_dens_compute(self.pointcloud,self.pointcloud,self.pointcloud_density[:,0],self.pointcloud_density[:,0],)
 		return torch.hstack([self.pointcloud,self.pointcloud_max_density])
 	
 	def get_ground_segmentation(self,):
-		# pointcloud_reversed = torch.hstack([self.pointcloud[0],self.pointcloud[1],-self.pointcloud[2]])
-		# pointpaded_reversed = torch.hstack([self.pointcloud_padded[0],self.pointcloud_padded[1],-self.pointcloud_padded[2]])
-		# print(self.pointcloud_density.shape)
 		self.pointcloud_max_density = self.ground_segmentation_compute(self.pointcloud,self.pointcloud_padded,-self.pointcloud[:,2],-self.pointcloud_padded[:,2])
 		return torch.hstack([self.pointcloud,self.pointcloud_max_density])

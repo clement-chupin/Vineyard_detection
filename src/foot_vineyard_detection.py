@@ -16,6 +16,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from ros_topic_utils import point_cloud_3d
 from ros_topic_utils import point_cloud_4d
+from ros_topic_utils import born_lidar_range
+from ros_topic_utils import bord_lidar_height
+
+
+
 
 from octotree_utils import OctreeTree
 from octotree_utils import LocalMaxSearching
@@ -113,26 +118,24 @@ class ProcessPointcloud:
 					torch.tensor([[0,0,0]],device=self.device)]),torch.tensor([0,0,0,1.0],device=self.device).view(-1,1)])
 			self.pointcloud_sub = rospy.Subscriber('~pointcloud', PointCloud2, self.map_callback,queue_size=1)
 			
-	def born_lidar_range(self,pointcloud,born_min,born_max):
-		selection_a = torch.sqrt((pointcloud**2).sum(1)) >= born_min
-		selection_b = torch.sqrt((pointcloud**2).sum(1)) <= born_max
-		return pointcloud[selection_a*selection_b]
-	def bord_lidar_height(self,pointcloud):
-		return pointcloud[(pointcloud[:,2] > self.z_lidar_min_limit)*(pointcloud[:,2] < self.z_lidar_max_limit)]
-	
+
 	def compute_pointcloud(self,pointcloud):
-		pointcloud = self.born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max)
+		pointcloud = born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max)
+		
 		self.ros_topic_manager.pub_message("pointcloud_range_limited",point_cloud_3d(
 			torch.matmul(pointcloud,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 
 		if self.ground_approx_memory:
-			ground_params = ground_approx_poly_n(
+			ground_params,mini_points = ground_approx_poly_n(
 				pointcloud,self.ground_approx_error,self.ground_approx_order,self.pred_ground_params,self.voxel_ground_size)
 			self.pred_ground_params = ground_params
 		else:
-			ground_params = ground_approx_poly_n(
+			ground_params,mini_points = ground_approx_poly_n(
 				pointcloud,self.ground_approx_error,self.ground_approx_order,None,self.voxel_ground_size)
+		self.ros_topic_manager.pub_message("ground_mini_points",point_cloud_3d(
+			torch.matmul(mini_points,self.transfo_link_3d.T).cpu(), self.frame_id_link))
 		
+
 		visu_plan_approximed = grid_based_on_param_poly_n(ground_params,pointcloud.device,self.ground_approx_order)
 		self.ros_topic_manager.pub_message("ground_plan_approximed",point_cloud_3d(
 			torch.matmul(visu_plan_approximed,self.transfo_link_3d.T).cpu(), self.frame_id_link))
@@ -154,7 +157,7 @@ class ProcessPointcloud:
 		if len(plant_in_foot_area) !=0:
 			foot_area_octree = OctreeTree(plant_in_foot_area,self.pointcloud_octree_kwargs)
 			
-			foot_area     = foot_area_octree.compute("get_entier_pc")
+			foot_area     		= foot_area_octree.compute("get_entier_pc")
 			unused_density_foot = foot_area_octree.compute("get_density")
 			local_max_foot_area = foot_area_octree.compute("get_local_max")
 			foot_area_poi  = foot_area[local_max_foot_area[:,3]==1]

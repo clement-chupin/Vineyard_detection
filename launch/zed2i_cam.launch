@@ -38,7 +38,7 @@
     <rosparam subst_value="True">
       activate: true
       use_gpu:  true
-      debug:    false
+      debug:    true
 
       link: "zed2i_left_camera_frame"
       <!-- link: "zed2i_left_camera_optical_frame" -->
@@ -71,7 +71,7 @@
       final_vine_selection_a: -0.5
       final_vine_selection_b: 0.0
 
-      ground_approx_order: 3                  #order of the ground, 3 give the better result
+      ground_approx_order: 2                  #order of the ground, 3 give the better result
       ground_approx_error: 0.05                
       ground_approx_memory: false              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
       final_merging_distance: 0.1

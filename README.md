@@ -28,11 +28,11 @@ Python environement :
 
 ## Run :
 
-`roslaunch Vineyard_detection stephane_cam_z.launch`
+`roslaunch Vineyard_detection zed2i_cam_z.launch`
 
 or
 
-`roslaunch NEW_ROS_PACKET_NAME stephane_cam_z.launch`
+`roslaunch NEW_ROS_PACKET_NAME zed2i_cam_z.launch`
 
 ## Doc :
 

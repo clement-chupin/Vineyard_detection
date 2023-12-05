@@ -1,8 +1,47 @@
 
 import torch
-from ros_topic_utils import publish_lines
+import torch.nn as nn
+# from ros_topic_utils import publish_lines
 from multiprocessing.pool import ThreadPool as Pool
 import time
+
+class Dens_compute(nn.Module):
+	def __init__(self, dist):
+		super().__init__()
+		self.d = dist
+	def forward(self,pointcloud,pointcloud_padded):
+		return (torch.cdist(pointcloud_padded,pointcloud,)<=self.d).sum(0).view(-1,1)[:pointcloud.shape[0]]
+
+class LocalMaxSearching(nn.Module):
+	def __init__(self, angle,threshold):
+		super().__init__()
+		self.a = angle
+		self.b = threshold
+
+	def forward(self,pointcloud,pointcloud_padding,element,element_padding):
+
+		P_i,P_j = pointcloud,pointcloud_padding
+		distance_ij = torch.cdist(P_i,P_j) 
+		P_j_projection = distance_ij*self.a+element_padding.view(-1)
+		P_j_projection_max  = P_j_projection.max(-1).values
+		dist_i_to_max = P_j_projection_max-element.view(-1)
+		return (dist_i_to_max <= self.b).view(-1,1)
+	
+# def local_maxima_main(self,pointcloud,pointcloud_padding,z_i=None,z_j=None,a=1.0,tresh_abs=0.0,tresh_rel=0.0):
+# 	P_i,P_j = pointcloud,pointcloud_padding #P_i etudiés, par rapport au projection des P_j
+# 	distance_ij = torch.cdist(P_i[:,:2],P_j[:,:2])  
+# 	if z_i is None or z_j is None:
+# 		z_i = P_i[:,2]
+# 		z_j = P_j[:,2]
+# 	P_j_proj = distance_ij*a+z_j
+
+# 	P_j_max  = P_j_proj.max(-1).values
+	
+# 	dist_i_to_max = P_j_max-z_i
+
+# 	seg_color = (dist_i_to_max <= (tresh_abs+tresh_rel*dist_i_to_max.mean())).view(-1,1)
+# 	return seg_color*1.0
+
 
 
 def pca(pointcloud):
@@ -118,12 +157,13 @@ def keep_min_in_voxel_grid(pointcloud,voxel_size):
 
 def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,init_abc=None,voxel_size=0.1): #speed_speed
 	if init_abc is None:
-		abc_outliers = plan_approx_poly_n(keep_min_in_voxel_grid(pointcloud,voxel_size),1)
+		mini_points = keep_min_in_voxel_grid(pointcloud,voxel_size)
+		abc_outliers = plan_approx_poly_n(mini_points,1)
 	else:
 		abc_outliers = init_abc
 	error 	     = torch.abs(error_of_approx_poly_n(pointcloud,abc_outliers,1))
 	abc_inliers  = plan_approx_poly_n(pointcloud[error < ground_approx_error],order)
-	return abc_inliers
+	return abc_inliers,mini_points
 
 
 def keep_pointcloud_in_plan_interval_poly_n(pointcloud,params,interval,order=2):
@@ -186,7 +226,7 @@ def foot_selection(self,foot,poi,r=0.1,height_threshold=0.3,marker_link="base_li
 			b = points_b[i[1]]
 			list_A.append(a)
 			list_B.append(b)
-		publish_lines(list_A,list_B,marker_link)
+		#publish_lines(list_A,list_B,marker_link)
 	N_reduce = 200
 	poi_trans = torch.matmul(poi,self.transfo_link_3d.T)
 	foot_trans = torch.matmul(foot,self.transfo_link_3d.T)
