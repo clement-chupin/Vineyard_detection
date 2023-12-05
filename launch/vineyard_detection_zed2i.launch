@@ -29,7 +29,7 @@
 
 
 
-  <node pkg="big_pc_compute" type="foot_vineyard_detection.py" name="compute_lidar"
+  <node pkg="big_pc_compute" type="vineyard_detection.py" name="compute_lidar"
     required="true" output="screen">
 
     <!-- <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/> -->
@@ -40,34 +40,29 @@
       use_gpu:  true
       debug:    true
 
-      link: "zed2i_left_camera_frame"
+      frame_id_link: "zed2i_left_camera_frame"
       <!-- link: "zed2i_left_camera_optical_frame" -->
-      
-
       transfo_link: [[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0],]
-
-      reduce_pointcloud_ratio: 1.0
 
       lidar_range_min: 0.0
       lidar_range_max: 5.0
-      lidar_z_min: 2.0
+      lidar_z_min: -2.0
       lidar_z_max: 100.0
-      #lidar_ground_approx_padding: 0.5
 
       octo_npoints_max: 1000
       octo_depth_max: 100
       octo_padding_size: 0.2
 
-      ground_segmentation_a: -0.6 #unused
-      ground_segmentation_b: 0.05 #unused
       ground_segmentation_voxel_size: 0.1
+      ground_segmentation_a: 0.6 
+      ground_segmentation_b: 0.05 
+      
 
       density_max_a: -100
       density_max_b: 0.0
       density_kernel_size: 0.1
       plant_density_kernel_size: 0.3
 
-      vine_foot_to_plane_trhld: 0.2
       final_vine_selection_a: -0.5
       final_vine_selection_b: 0.0
 
@@ -79,6 +74,8 @@
       height_selection_low: 0.3
       height_selection_mid: 0.4
       height_selection_hig: 1.2
+
+      threshold_nb_plant_foot_detection: 4
 
     </rosparam>
   </node> 

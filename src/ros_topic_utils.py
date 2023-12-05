@@ -100,6 +100,7 @@ def born_lidar_range(pointcloud,born_min,born_max):
 	selection_a = torch.sqrt((pointcloud**2).sum(1)) >= born_min
 	selection_b = torch.sqrt((pointcloud**2).sum(1)) <= born_max
 	return pointcloud[selection_a*selection_b]
+
 def bord_lidar_height(pointcloud,min_limit,max_limit):
 	return pointcloud[(pointcloud[:,2] > min_limit)*(pointcloud[:,2] < max_limit)]
 

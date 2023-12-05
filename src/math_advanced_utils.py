@@ -155,14 +155,23 @@ def keep_min_in_voxel_grid(pointcloud,voxel_size):
 	low = lowest_voxels_per_column_parallel(voxel_grid)
 	return low*voxel_size + min_coords.view(1,3)
 
-def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,init_abc=None,voxel_size=0.1): #speed_speed
-	if init_abc is None:
-		mini_points = keep_min_in_voxel_grid(pointcloud,voxel_size)
-		abc_outliers = plan_approx_poly_n(mini_points,1)
-	else:
-		abc_outliers = init_abc
-	error 	     = torch.abs(error_of_approx_poly_n(pointcloud,abc_outliers,1))
-	abc_inliers  = plan_approx_poly_n(pointcloud[error < ground_approx_error],order)
+
+
+def ground_approx_poly_n(pointcloud,ground_approx_error=0.1,order=2,voxel_size=0.1,ground_segmentator = LocalMaxSearching(-0.4,0.05)): #speed_speed
+	# if init_abc is None:
+	# 	mini_points = keep_min_in_voxel_grid(pointcloud,voxel_size)
+	# 	mini_color = ground_segmentator(mini_points,mini_points,-mini_points[:,2],-mini_points[:,2])
+	# 	mini_points = mini_points[mini_color[:,0] == 1.0]
+	# 	abc_outliers = plan_approx_poly_n(mini_points,1)
+	# else:
+	# 	abc_outliers = init_abc
+	
+	# error 	     = torch.abs(error_of_approx_poly_n(pointcloud,abc_outliers,1))
+	# abc_inliers  = plan_approx_poly_n(pointcloud[error < ground_approx_error],order)
+	mini_points = keep_min_in_voxel_grid(pointcloud,voxel_size)
+	mini_color = ground_segmentator(mini_points,mini_points,-mini_points[:,2],-mini_points[:,2])
+	mini_points = mini_points[mini_color[:,0] == 1.0]
+	abc_inliers  = plan_approx_poly_n(mini_points,order)
 	return abc_inliers,mini_points
 
 

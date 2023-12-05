@@ -35,30 +35,31 @@ import time
 class Density_compute:
 	def __init__(self):
 
-		self.activate                 = rospy.get_param('~activate', True)
-		self.use_gpu                  = rospy.get_param('~use_gpu', True)
-		self.debug               = rospy.get_param('~debug', True)
+		self.activate              = rospy.get_param('~activate', True)
+		self.use_gpu               = rospy.get_param('~use_gpu', True)
+		self.debug                 = rospy.get_param('~debug', True)
 
-		self.mode_detection           = rospy.get_param('~computation_target', "gr") #["density,"ground_segmentation","pt_interest"]
+		self.mode_detection        = rospy.get_param('~computation_target', "gr") #["density,"ground_segmentation","pt_interest"]
+		self.frame_id_link         = rospy.get_param('~link',"velo_link")
 
-		self.size_pcc                 = rospy.get_param('~density_pcc', 0.3)
-		self.size_poi_pcc              = rospy.get_param('~density_poi_pcc', 0.3)
-		self.size_poi_max_angular              = rospy.get_param('~density_poi_max_agular',-100)
-		self.frame_id_link              		  = rospy.get_param('~link',"velo_link")
+		self.size_pcc              = rospy.get_param('~density_pcc', 0.3)
+		self.size_poi_pcc          = rospy.get_param('~density_poi_pcc', 0.3)
+		self.density_max_a  = rospy.get_param('~density_max_a',-100)
+		
 		
 
 		
 		#self.dens_compute_model = torch.jit.script(self.dens_compute_model)
 		#self.dens_compute_model = torch.compile(self.dens_compute_model)
+		self.polar_grid               = rospy.get_param('~polar_grid',True)
 
+		self.size_voxels         	  = rospy.get_param('~size_voxels', 0.1)
+		self.size_voxels_padding      = rospy.get_param('~size_voxels_padding', 0)
 		
 		self.angular_voxel_pad        = rospy.get_param('~angle_voxel_split_padding', 5)
 		self.dist_voxel_pad           = rospy.get_param('~dist_voxel_split_padding', 0.1)
 		self.angular_voxel            = rospy.get_param('~angle_voxel_split', 20)
 		self.dist_voxel               = rospy.get_param('~dist_voxel_split', 0.5)
-
-		self.size_voxels         	  = rospy.get_param('~size_voxels', 0.1)
-		self.size_voxels_padding      = rospy.get_param('~size_voxels_padding', 0)
 
 
 		self.nb_process               = rospy.get_param('~pool_n_workers', 128)
@@ -67,13 +68,16 @@ class Density_compute:
 		self.range_lidar_min          = rospy.get_param('~lidar_range_min', 0.0)
 		self.range_lidar_max          = rospy.get_param('~lidar_range_max', 100.0)
 		self.z_lidar_min_limit		  = rospy.get_param('~lidar_z_min', -2.0)
+		self.z_lidar_max_limit		  = rospy.get_param('~lidar_z_max', 20.0)
 
 		self.height_relative_treshold = rospy.get_param('~gr_relative_treshold', 1.0)
 		self.height_absolute_treshold = rospy.get_param('~gr_absolute_treshold', 0.01)
 		self.angular_remover          = rospy.get_param('~gr_angular',0.6)
 
-		self.polar_grid               = rospy.get_param('~polar_grid',True)
+		
 		self.ros_topic_manager = ros_topic_manager()
+
+
 
 		### Try to speed up pytorch computation
 		mp.set_start_method('forkserver')
@@ -95,7 +99,11 @@ class Density_compute:
 
 			
 
-	def compute_pointcloud(self,pointcloud):
+	def compute_pointcloud(self,numpy_pointcloud):
+		pointcloud = torch.tensor(numpy_pointcloud,dtype=torch.float32,device=self.device);del numpy_pointcloud
+		pointcloud = bord_lidar_height(pointcloud,self.z_lidar_min_limit,self.z_lidar_max_limit)
+		pointcloud = born_lidar_range(pointcloud,self.range_lidar_min,self.range_lidar_max,)
+
 		voxel_grid_pointcloud=  VoxelGrid(
 			pointcloud,
 			self.polar_grid,
@@ -111,22 +119,21 @@ class Density_compute:
 			self.size_voxels,
 			self.size_voxels_padding,
 			self.size_poi_pcc,
-			self.size_poi_max_angular
+			self.density_max_a
 			)
+		
+		self.ros_topic_manager.pub_message("pointcloud_voxels_index",point_cloud_4d(torch.hstack([pointcloud,(voxel_grid_pointcloud.index_tiles[:,0]%2+voxel_grid_pointcloud.index_tiles[:,1]%5).view(-1,1)]).cpu(), self.frame_id_link))
 
 		if self.mode_detection == "density":
 			density_pointcloud =  voxel_grid_pointcloud.get_density() 
-			print("density : ",density_pointcloud.shape)
 			self.ros_topic_manager.pub_message("pointcloud_density",point_cloud_4d(density_pointcloud.cpu(), self.frame_id_link))
 
 		if self.mode_detection == "pt_interest":
 			pt_interest_pointcloud =  voxel_grid_pointcloud.get_pt_interest() 
-			print("pt_interest : ",pt_interest_pointcloud.shape)
-			self.ros_topic_manager.pub_message("pointcloud_pt_interest",point_cloud_3d(pt_interest_pointcloud.cpu(), self.frame_id_link))
+			self.ros_topic_manager.pub_message("pointcloud_pt_interest",point_cloud_4d(pt_interest_pointcloud.cpu(), self.frame_id_link))
 
 		if self.mode_detection == "ground_segmentation":
 			ground_segmentation_pointcloud =  voxel_grid_pointcloud.get_ground_segmentation()
-			print("ground_segmentation : ",ground_segmentation_pointcloud.shape)
 			self.ros_topic_manager.pub_message("pointcloud_ground_segmentation",point_cloud_4d(ground_segmentation_pointcloud.cpu(), self.frame_id_link))
 
 
@@ -134,9 +141,9 @@ class Density_compute:
 	def map_callback(self,msg: PointCloud2):
 			t0 = time.time()
 			pointcloud = ros_numpy.point_cloud2.pointcloud2_to_xyz_array(msg)
+
 			if len(pointcloud):
-				pointcloud = torch.tensor(pointcloud,dtype=torch.float32,device=self.device)
-				self.ros_topic_manager.pub_message("raw_pointcloud_received",point_cloud_3d(pointcloud.cpu(), self.frame_id_link))
+				
 				self.compute_pointcloud(pointcloud)
 				t1 = time.time()
 				if self.debug:

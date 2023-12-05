@@ -35,7 +35,7 @@
 
 
 
-  <node pkg="big_pc_compute" type="pointcloud_process_v1.py" name="compute_lidar"
+  <node pkg="big_pc_compute" type="vineyard_detection.py" name="compute_lidar"
     required="true" output="screen">
 
     <remap from="~pointcloud" to="/lidar_cloud/map"/>

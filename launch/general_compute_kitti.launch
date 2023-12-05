@@ -28,12 +28,11 @@
       debug:    true
 
       computation_target: $(arg compute_mode)        #["density,"ground_segmentation","pt_interest","experimental_gaussian"]
-      link: "velo_link"
-
-
+      frame_id_link: "velo_link"
 
       density_pcc: 0.2
-      density_pi_pcc: 0.5
+      density_poi_pcc: 0.5
+      density_max_a: -10
 
       polar_grid: true
 
@@ -44,17 +43,16 @@
       #polar_grid
       angle_voxel_split: 30
       dist_voxel_split:  4.0
-      angle_voxel_split_padding: 1
-      dist_voxel_split_padding:  0.2
+      angle_voxel_split_padding: 0.0   #1
+      dist_voxel_split_padding:  0.0   #0.2
 
+      pool_n_workers:  4
+      pool_n_chunk:    4
 
-
-      pool_n_workers:  64
-      pool_n_chunk:    64
-
-      lidar_range_min: 0.0
+      lidar_range_min: 10.0
       lidar_range_max: 40.0
       lidar_z_min:     -2.5
+      lidar_z_max:     40.0
 
       gr_relative_treshold: 0.0
       gr_absolute_treshold: 0.15
