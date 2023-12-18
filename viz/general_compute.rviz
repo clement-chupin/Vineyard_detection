@@ -5,7 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /ground_remover1
         - /point_of_interest1
+        - /density2
       Splitter Ratio: 0.5
     Tree Height: 727
   - Class: rviz/Selection
@@ -25,7 +27,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: point_of_interest
+    SyncSource: density
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -159,7 +161,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 164; 0; 0
       Min Color: 32; 74; 135
@@ -170,11 +172,11 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.03999999910593033
       Style: Flat Squares
-      Topic: /pointcloud_pt_interest
+      Topic: /pointcloud_ground_segmentation
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -199,6 +201,34 @@ Visualization Manager:
       Size (m): 0.03999999910593033
       Style: Flat Squares
       Topic: /pointcloud_pt_interest
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: false
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 25; 255; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: density
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.5
+      Style: Boxes
+      Topic: /mini
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
@@ -231,7 +261,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 38.22065353393555
+      Distance: 34.75144958496094
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -247,9 +277,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7297971844673157
+      Pitch: 0.014798241667449474
       Target Frame: <Fixed Frame>
-      Yaw: 4.613667011260986
+      Yaw: 3.2154886722564697
     Saved: ~
 Window Geometry:
   Displays:
