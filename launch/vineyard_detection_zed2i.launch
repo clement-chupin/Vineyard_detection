@@ -29,6 +29,23 @@
 
 
 
+<!-- <node name="grid" pkg="romea_ground_removal" type="romea_ground_removal_node" output = "screen"> -->
+<node name="grid" pkg="romea_ground_removal" type="traversability_map_node.py" output = "screen">
+    <remap from="~input" to="pointcloud_downsampled" />
+
+    <param name="cell_size" value="0.1" />
+    <param name="thresh_z" value="-0.3" />
+    <param name="foliage_height_thresh" value="0.6" />
+    <param name="continuity_thresh" value="0.2" />
+    <param name="continuity_min_height" value="0.05" />
+    <rosparam subst_value="True">
+      frame_id_link: "zed2i_left_camera_frame"
+
+    </rosparam>
+  </node>
+
+
+
   <node pkg="big_pc_compute" type="vineyard_detection.py" name="compute_lidar"
     required="true" output="screen">
 
@@ -38,7 +55,7 @@
     <rosparam subst_value="True">
       activate: true
       use_gpu:  true
-      debug:    true
+      debug:    false
 
       frame_id_link: "zed2i_left_camera_frame"
       <!-- link: "zed2i_left_camera_optical_frame" -->
@@ -80,7 +97,7 @@
     </rosparam>
   </node> 
 
-  <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l -r 1 $(arg bag)" output="log"/>
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/camz_v2.rviz" />
+  <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l -r 0.2 $(arg bag)" output="log"/>
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/vineyard_detection.rviz" />
 
 </launch>

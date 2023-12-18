@@ -45,52 +45,58 @@ because they are not part of the same tree.Tf has two or more unconnected trees.
   <node pkg="big_pc_compute" type="vineyard_detection.py" name="compute_lidar"
     required="true" output="screen">
 
+    <!-- <remap from="~pointcloud" to="/zed2i/zed_node/point_cloud/cloud_registered"/> -->
     <remap from="~pointcloud" to="/lidar_cloud/map"/>
 
     <rosparam subst_value="True">
       activate: true
       use_gpu:  true
-      debug:    false
+      debug:    true
 
-      invert_yz: false
-
-      link: "base_link"
-      #transfo_link: [[1.0,0.0,0.0],[0.0,0.0,1.0],[0.0,-1.0,0.0],]
+      frame_id_link: "base_link"
+      <!-- link: "zed2i_left_camera_optical_frame" -->
       transfo_link: [[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0],]
 
-      
-      reduce_pointcloud_ratio: 1.0
-      
-
       lidar_range_min: 0.0
-      lidar_range_max: 100.0
+      lidar_range_max: 5.0
       lidar_z_min: -2.0
+      lidar_z_max: 100.0
 
-      octo_npoints_max: 2000
+      octo_npoints_max: 1000
       octo_depth_max: 100
-      octo_padding_size: 0.1
+      octo_padding_size: 0.2
 
-      ground_segmentation_a: -0.6
-      ground_segmentation_b: 0.03
+      ground_segmentation_voxel_size: 0.1
+      ground_segmentation_a: 0.6 
+      ground_segmentation_b: 0.05 
+      
 
       density_max_a: -100
       density_max_b: 0.0
       density_kernel_size: 0.1
+      plant_density_kernel_size: 0.3
 
-
-      vine_foot_to_plane_trhld: 0.2
       final_vine_selection_a: -0.5
       final_vine_selection_b: 0.0
 
-      ground_approx_error: 0.25
+      ground_approx_order: 2                  #order of the ground, 3 give the better result
+      ground_approx_error: 0.05                
+      ground_approx_memory: false              #init the ground approximation, true give a good and stable result, but it's mathematicaly empiric, it's link instant k and k-1, event aren't independant, can create divergence or consanguinity               
       final_merging_distance: 0.1
 
+      height_selection_low: 0.3
+      height_selection_mid: 0.4
+      height_selection_hig: 1.2
+
+      threshold_nb_plant_foot_detection: 4
 
     </rosparam>
   </node> 
 
 
+
+
   <node name="bag_play" pkg="rosbag" type="play" required="true" args="-l -r 1 $(arg bag)" output="log"/>
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/camz_v1.rviz" />
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find big_pc_compute)/viz/vineyard_detection.rviz" />
 
 </launch>
